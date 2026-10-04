@@ -1,0 +1,201 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Quicksand', sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: #ffc2d1;
+}
+
+/* --- PANTALLA 1: TARJETA INICIAL --- */
+.card {
+    background: #ffffff;
+    padding: 2.5rem 2.2rem;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+}
+
+.card img {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 20px;
+}
+
+.card h2 {
+    font-size: 1.35rem;
+    color: #4a3338;
+    font-weight: 700;
+}
+
+.btn-press {
+    background: linear-gradient(135deg, #ff8da1 0%, #ff5c7c 100%);
+    color: white;
+    padding: 0.8rem 2.2rem;
+    border-radius: 30px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(255, 92, 124, 0.4);
+    transition: transform 0.2s ease;
+    font-family: 'Quicksand', sans-serif;
+}
+
+.btn-press:hover {
+    transform: scale(1.05);
+}
+
+/* --- PANTALLA 2: UNIVERSO DE SATURNO --- */
+.universe-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #130b2b 0%, #030108 100%);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.universe-container:active {
+    cursor: grabbing;
+}
+
+.universe-title {
+    position: absolute;
+    top: 35px;
+    color: #ffffff;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    z-index: 10;
+    text-align: center;
+    width: 100%;
+}
+
+#universeCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.back-btn {
+    position: absolute;
+    bottom: 30px;
+    background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(5px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Quicksand', sans-serif;
+    z-index: 10;
+    transition: background 0.3s;
+}
+
+.back-btn:hover {
+    background-color: #ff5c7c;
+    border-color: #ff5c7c;
+}
+
+/* Animación de brillo para el título del universo */
+.universe-title {
+    animation: pulseTitle 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulseTitle {
+    0% { transform: scale(1); text-shadow: 0 0 10px rgba(255, 140, 160, 0.8); }
+    100% { transform: scale(1.02); text-shadow: 0 0 25px rgba(255, 180, 200, 1), 0 0 40px rgba(255, 255, 255, 0.8); }
+}
+
+/* --- ESTILOS DE LA CARTA DE AMOR --- */
+.carta-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.carta-contenido {
+    background: #ffffff;
+    padding: 2.5rem;
+    border-radius: 25px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(255, 92, 124, 0.3);
+    border: 3px solid #ffc2d1;
+    position: relative;
+    animation: popUp 0.3s ease-out;
+}
+
+.carta-contenido h3 {
+    color: #ff5c7c;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.carta-contenido p {
+    color: #4a3338;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    white-space: pre-line; /* Respeta los saltos de línea que escribas */
+}
+
+.btn-cerrar-carta {
+    background: linear-gradient(135deg, #ff8da1 0%, #ff5c7c 100%);
+    color: white;
+    padding: 0.7rem 2rem;
+    border-radius: 25px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: 'Quicksand', sans-serif;
+    box-shadow: 0 5px 15px rgba(255, 92, 124, 0.4);
+    transition: transform 0.2s ease;
+}
+
+.btn-cerrar-carta:hover {
+    transform: scale(1.05);
+}
+
+@keyframes popUp {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}

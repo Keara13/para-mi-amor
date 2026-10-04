@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Galaxia de amor ♥</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <!-- AUDIO DE FONDO -->
+    <audio id="bgMusic" loop>
+        <source src="video1.mp3" type="audio/mpeg">
+        Tu navegador no soporta audio.
+    </audio>
+
+    <!-- PANTALLA 1: TARJETA INICIAL -->
+    <div class="card" id="mainCard">
+        <img src="imagen1.jpg" alt="Gatito lindo con corazones">
+        <h2>Toca aquí amor ♥</h2>
+        <button class="btn-press" id="showUniverseBtn">Presiona aquí</button>
+    </div>
+
+    <!-- PANTALLA 2: UNIVERSO DE SATURNO -->
+    <div class="universe-container" id="universeContainer">
+        <div class="universe-title">✨ MI GALAXIA ERES TÚ MI AMOR ✨</div>
+        <div id="universeCanvas"></div>
+        <button class="back-btn" id="backBtn">Volver ♥</button>
+    </div>
+
+    <!-- VENTANA MODAL DE LA CARTA DE AMOR -->
+    <div class="carta-modal" id="cartaModal">
+        <div class="carta-contenido">
+            <h3>Para el amor de mi vida 💌</h3>
+            <p id="textoCarta">Aquí puedes escribir tu carta de amor. Lo que sientas por él, lo mucho que lo amas, tus sentimientos... ¡lo que tú quieras que lea cuando toque el planeta!</p>
+            <button class="btn-cerrar-carta" id="cerrarCartaBtn">Cerrar con un besito 💋</button>
+        </div>
+    </div>
+
+    <script>
+        const showBtn = document.getElementById('showUniverseBtn');
+        const backBtn = document.getElementById('backBtn');
+        const mainCard = document.getElementById('mainCard');
+        const universeContainer = document.getElementById('universeContainer');
+        const bgMusic = document.getElementById('bgMusic');
+        const cartaModal = document.getElementById('cartaModal');
+        const cerrarCartaBtn = document.getElementById('cerrarCartaBtn');
+        const textoCarta = document.getElementById('textoCarta');
+
+        // ---- ESCRIBE TU CARTA AQUÍ ABAJO ----
+        // Puedes cambiar el texto entre las comillas (` `). Si quieres saltos de línea, solo presiona Enter.
+        textoCarta.innerText = `Mi amor, eres lo más bonito que ha llegado a mi vida. 
+        Cada segundo a tu lado es mágico y este pequeño universo lo hice pensando en ti, porque tú eres mi galaxia entera. 
+        Te amo con todo mi corazón hoy y siempre. ✨💖`;
+
+        let scene, camera, renderer, controls;
+        let planetMesh, starField;
+        let ringGroups = [];
+        let isInitialized = false;
+
+        // Detector de clics para abrir la carta al tocar el planeta
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        showBtn.addEventListener('click', () => {
+            mainCard.style.display = 'none';
+            universeContainer.style.display = 'flex';
+            
+            bgMusic.play().catch(error => {
+                console.log("Audio play error:", error);
+            });
+
+            if (!isInitialized) {
+                init3DUniverse();
+                isInitialized = true;
+            }
+        });
+
+        backBtn.addEventListener('click', () => {
+            universeContainer.style.display = 'none';
+            mainCard.style.display = 'flex';
+        });
+
+        cerrarCartaBtn.addEventListener('click', () => {
+            cartaModal.style.display = 'none';
+        });
+
+        function createTextSprite(message) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            
+            context.font = 'Bold 40px Quicksand, sans-serif';
+            context.fillStyle = '#ffffff'; 
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            context.shadowColor = 'rgba(0, 0, 0, 0.95)';
+            context.shadowBlur = 12;
+            context.lineWidth = 4;
+            context.strokeText(message, canvas.width / 2, canvas.height / 2);
+            context.fillText(message, canvas.width / 2, canvas.height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(8.5, 2.1, 1);
+            return sprite;
+        }
+
+        function createDotTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.7)');
+            gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createRealSaturnTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0.0, '#3d2c1d');
+            gradient.addColorStop(0.15, '#7a5d3b');
+            gradient.addColorStop(0.3, '#b59267');
+            gradient.addColorStop(0.45, '#e3d0ab');
+            gradient.addColorStop(0.55, '#a38157');
+            gradient.addColorStop(0.7, '#ccb58f');
+            gradient.addColorStop(0.85, '#856642');
+            gradient.addColorStop(1.0, '#2e1f13');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < 100; i++) {
+                ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 240, 210, 0.07)' : 'rgba(30, 15, 5, 0.15)';
+                const y = Math.random() * canvas.height;
+                const h = Math.random() * 10 + 2;
+                ctx.fillRect(0, y, canvas.width, h);
+            }
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function init3DUniverse() {
+            const container = document.getElementById('universeCanvas');
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 40, 115);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 300;
+            controls.minDistance = 35;
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfff5e6, 1.6);
+            sunLight.position.set(100, 70, 50);
+            scene.add(sunLight);
+
+            // Planeta Saturno
+            const planetGeometry = new THREE.SphereGeometry(18, 64, 64);
+            const planetMaterial = new THREE.MeshStandardMaterial({
+                map: createRealSaturnTexture(),
+                roughness: 0.6,
+                metalness: 0.05
+            });
+            planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+            scene.add(planetMesh);
+
+            // Evento para detectar cuando hace clic exactamente en Saturno
+            window.addEventListener('click', (event) => {
+                // Solo abrir si el universo está visible
+                if (universeContainer.style.display === 'flex') {
+                    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObject(planetMesh);
+
+                    if (intersects.length > 0) {
+                        cartaModal.style.display = 'flex';
+                    }
+                }
+            });
+
+            // Estrellas de fondo
+            const starsGeometry = new THREE.BufferGeometry();
+            const starsCount = 4500;
+            const starPositions = new Float32Array(starsCount * 3);
+            
+            for(let i = 0; i < starsCount * 3; i += 3) {
+                starPositions[i] = (Math.random() - 0.5) * 1200;
+                starPositions[i+1] = (Math.random() - 0.5) * 1200;
+                starPositions[i+2] = (Math.random() - 0.5) * 1200;
+            }
+
+            starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            
+            const starsMaterial = new THREE.PointsMaterial({ 
+                map: createDotTexture(),
+                size: 3.2, 
+                color: 0xffffff,
+                transparent: true, 
+                opacity: 0.85,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            starField = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(starField);
+
+            const basePhrases = [
+                "Te amo ♥", "Te adoro 💕", "Te quiero muchísimo 💖", "Te amo con todo mi ser ✨", "Eres mi vida entera ✿",
+                "Mi niño bonito 🧸", "Mi rey 👑", "Mi amor 💘", "Mi sol ☀", "Mi todo ✦",
+                "Mi latido 💓", "Mi niñito 🥺", "Cariño mío 🌸", "Mi cielo ⭐", "Mi pedacito de cielo ☁",
+                "Mi príncipe 👑", "Mi dulce amor 🍯", "Mi ojitos lindos 👀", "Mi tesoro 💎", "Mi razón de ser 💫",
+                "Contigo todo es mejor 🌙", "Mi lugar favorito eres tú 🏡", "Por siempre tú y yo ♾️", 
+                "Mi casualidad más bonita 🍀", "Te amo hoy y siempre 💌", "Eres mi paz 🕊️", "Mi sonrisa favorita 🌷"
+            ];
+
+            const ringCount = 4;
+            for(let index = 0; index < ringCount; index++) {
+                const ringGroup = new THREE.Group();
+                const radius = 26 + (index * 12); 
+                
+                const lineGeometry = new THREE.RingGeometry(radius - 0.08, radius + 0.08, 128);
+                const lineMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff, 
+                    side: THREE.DoubleSide, 
+                    transparent: true, 
+                    opacity: 0.18
+                });
+                const lineMesh = new THREE.Mesh(lineGeometry, lineMaterial);
+                lineMesh.rotation.x = Math.PI / 2;
+                ringGroup.add(lineMesh);
+
+                const dotsCount = 80;
+                const dotGeometry = new THREE.BufferGeometry();
+                const dotPositions = new Float32Array(dotsCount * 3);
+
+                for (let d = 0; d < dotsCount * 3; d += 3) {
+                    const angle = (d / (dotsCount * 3)) * Math.PI * 2;
+                    dotPositions[d] = Math.cos(angle) * radius;
+                    dotPositions[d+1] = (Math.random() - 0.5) * 0.2;
+                    dotPositions[d+2] = Math.sin(angle) * radius;
+                }
+                dotGeometry.setAttribute('position', new THREE.BufferAttribute(dotPositions, 3));
+                
+                const dotMaterial = new THREE.PointsMaterial({
+                    map: createDotTexture(),
+                    size: 2.3,
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.75,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                });
+                const dotParticles = new THREE.Points(dotGeometry, dotMaterial);
+                ringGroup.add(dotParticles);
+
+                const phrases = [];
+                for(let k = 0; k < 20; k++) {
+                    phrases.push(basePhrases[(k + index * 5) % basePhrases.length]);
+                }
+                const count = phrases.length;
+
+                phrases.forEach((text, i) => {
+                    const angle = (i / count) * Math.PI * 2;
+                    const sprite = createTextSprite(text);
+                    
+                    sprite.position.x = Math.cos(angle) * radius;
+                    sprite.position.z = Math.sin(angle) * radius;
+                    sprite.position.y = (Math.random() - 0.5) * 1.2;
+                    
+                    ringGroup.add(sprite);
+                });
+
+                ringGroup.rotation.x = 0.45;
+                ringGroup.rotation.z = 0.2;
+                ringGroup.userData = { speed: 0.0010 + (index * 0.0003) };
+
+                scene.add(ringGroup);
+                ringGroups.push(ringGroup);
+            }
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (planetMesh) planetMesh.rotation.y += 0.0012;
+            if (starField) starField.rotation.y += 0.0002;
+
+            ringGroups.forEach(group => {
+                group.rotation.y += group.userData.speed;
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
